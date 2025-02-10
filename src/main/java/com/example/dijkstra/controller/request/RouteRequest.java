@@ -6,7 +6,6 @@ import java.util.List;
 
 @Data
 public class RouteRequest {
-    private List<String> cityNames;
     private String startCityName;
     private String endCityName;
 }

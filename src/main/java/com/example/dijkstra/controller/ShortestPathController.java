@@ -20,7 +20,7 @@ public class ShortestPathController {
 
     @PostMapping("/optimize")
     public List<City> optimizeRoute(@RequestBody RouteRequest request) {
-        return routeService.findOptimizedRoute(request.getCityNames(), request.getStartCityName(), request.getEndCityName());
+        return routeService.findOptimizedRoute(request.getStartCityName(), request.getEndCityName());
     }
 
 }
