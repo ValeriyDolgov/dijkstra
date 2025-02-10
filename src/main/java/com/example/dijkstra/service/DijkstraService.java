@@ -1,9 +1,7 @@
 package com.example.dijkstra.service;
 
-import com.example.dijkstra.model.Edge;
-import com.example.dijkstra.model.Node;
-import com.example.dijkstra.repository.EdgeRepository;
-import com.example.dijkstra.repository.NodeRepository;
+
+import com.example.dijkstra.model.City;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,98 +11,71 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DijkstraService {
 
-    private final NodeRepository nodeRepository;
-    private final EdgeRepository edgeRepository;
+    public List<City> findShortestPath(List<City> cities, City start, City end) {
+        Map<City, Double> distances = new HashMap<>();
+        Map<City, City> previous = new HashMap<>();
+        PriorityQueue<City> queue = new PriorityQueue<>(Comparator.comparingDouble(distances::get));
 
-    public String getShortestPathBetweenTwoNodes(String startNodeName, String endNodeName) {
-        var startNode = nodeRepository.findByName(startNodeName)
-                                      .orElseThrow(() -> new RuntimeException("Start node not found"));
-        var endNode = nodeRepository.findByName(endNodeName)
-                                    .orElseThrow(() -> new RuntimeException("End node not found"));
-
-        // Рассчитываем путь в обоих направлениях и выбираем более короткий
-        var pathForward = calculatePathWithDistance(startNode, endNode);
-        var pathBackward = calculatePathWithDistance(endNode, startNode);
-
-        // Выбираем путь с меньшим расстоянием
-        return (pathForward.distance <= pathBackward.distance) ? pathForward.path : pathBackward.path;
-    }
-
-    private PathResult calculatePathWithDistance(Node startNode, Node endNode) {
-        List<Node> shortestPathNodes = getShortestPath(startNode, endNode);
-        int totalDistance = 0;
-
-        if (shortestPathNodes.size() <= 1) {
-            return new PathResult("Путь не найден", Integer.MAX_VALUE);
+        // Initialize distances
+        for (City city : cities) {
+            if (city.equals(start)) {
+                distances.put(city, 0.0);
+            } else {
+                distances.put(city, Double.MAX_VALUE);
+            }
+            queue.add(city);
         }
 
-        var path = new StringBuilder();
+        // Dijkstra's algorithm
+        while (!queue.isEmpty()) {
+            City current = queue.poll();
 
-        for (int i = 0; i < shortestPathNodes.size() - 1; i++) {
-            var currentNode = shortestPathNodes.get(i);
-            var nextNode = shortestPathNodes.get(i + 1);
-
-            path.append(currentNode.getName()).append(" -> ");
-
-            // Получаем расстояние между текущим и следующим узлом
-            int distance = edgeRepository.findBySourceAndDestination(currentNode, nextNode)
-                                         .orElseThrow(() -> new RuntimeException("Edge not found")).getWeight();
-            totalDistance += distance;
-        }
-
-        path.append(shortestPathNodes.get(shortestPathNodes.size() - 1).getName());
-        path.append(" Расстояние: ").append(totalDistance).append(" м");
-
-        return new PathResult(path.toString(), totalDistance);
-    }
-
-    private List<Node> getShortestPath(Node startNode, Node endNode) {
-        Map<Node, Integer> distances = new HashMap<>();
-        Map<Node, Node> previousNodes = new HashMap<>();
-        PriorityQueue<Node> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(distances::get));
-
-        for (Node node : nodeRepository.findAll()) {
-            distances.put(node, Integer.MAX_VALUE);
-        }
-        distances.put(startNode, 0);
-        priorityQueue.add(startNode);
-
-        while (!priorityQueue.isEmpty()) {
-            Node currentNode = priorityQueue.poll();
-
-            if (currentNode.equals(endNode)) {
+            // Stop if we reach the destination
+            if (current.equals(end)) {
                 break;
             }
 
-            for (Edge edge : edgeRepository.findBySource(currentNode)) {
-                Node neighbor = edge.getDestination();
-                int newDist = distances.get(currentNode) + edge.getWeight();
+            // Find all neighbors (all other cities)
+            for (City neighbor : cities) {
+                if (!neighbor.equals(current)) {
+                    double distance = calculateDistance(current, neighbor);
+                    double newDistance = distances.get(current) + distance;
 
-                if (newDist < distances.get(neighbor)) {
-                    distances.put(neighbor, newDist);
-                    previousNodes.put(neighbor, currentNode);
-                    priorityQueue.add(neighbor);
+                    // Update the distance if a shorter path is found
+                    if (newDistance < distances.get(neighbor)) {
+                        distances.put(neighbor, newDistance);
+                        previous.put(neighbor, current);
+                        // Re-add the neighbor to the queue to re-evaluate its neighbors
+                        queue.remove(neighbor);
+                        queue.add(neighbor);
+                    }
                 }
             }
         }
 
-        List<Node> path = new ArrayList<>();
-        for (Node node = endNode; node != null; node = previousNodes.get(node)) {
-            path.add(node);
+        // Build the shortest path
+        List<City> path = new ArrayList<>();
+        for (City city = end; city != null; city = previous.get(city)) {
+            path.add(city);
         }
-
         Collections.reverse(path);
+
         return path;
     }
 
-    private static class PathResult {
-        String path;
-        int distance;
+    private double calculateDistance(City city1, City city2) {
+        double lat1 = Math.toRadians(city1.getLatitude());
+        double lon1 = Math.toRadians(city1.getLongitude());
+        double lat2 = Math.toRadians(city2.getLatitude());
+        double lon2 = Math.toRadians(city2.getLongitude());
 
-        PathResult(String path, int distance) {
-            this.path = path;
-            this.distance = distance;
-        }
+        double dLat = lat2 - lat1;
+        double dLon = lon2 - lon1;
+
+        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        double radius = 6371; // Earth's radius in kilometers
+        return radius * c;
     }
 }
-
