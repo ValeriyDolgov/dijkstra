@@ -61,7 +61,7 @@ public class GeoJsonGraphBuilder {
         List<double[]> correctedPath = new ArrayList<>();
         for (String node : path) {
             double[] coords = coordinatesMap.get(node);
-            correctedPath.add(new double[]{coords[1], coords[0]}); // Меняем lat и lon местами
+            correctedPath.add(new double[]{coords[0], coords[1]}); // Меняем lat и lon местами
         }
         return correctedPath;
     }
