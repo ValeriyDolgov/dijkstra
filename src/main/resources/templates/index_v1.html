@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +16,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.7); /* Полупрозрачный фон */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -33,18 +33,22 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Размытие без лоадера */
         .blurred {
             filter: blur(5px);
-            pointer-events: none;
+            pointer-events: none; /* Блокирует взаимодействие */
         }
 
         .blurred #loader {
-            filter: none;
+            filter: none; /* Лоадер остается четким */
         }
 
         /* Карта */
@@ -82,32 +86,31 @@
 <div class="input-container">
     <div>
         <div>
-            <label>Стартовая Широта (Lat): <input type="text" id="startLat" readonly></label>
+            <label>Стартовая Широта (Lat): <input type="text" id="startLat" value="54.8643387"></label>
         </div>
         <div>
-            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" readonly></label>
+            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" value="69.1336783"></label>
         </div>
     </div>
     <div>
         <div>
-            <label>Финишная Широта (Lat): <input type="text" id="endLat" readonly></label>
+            <label>Финишная Широта (Lat): <input type="text" id="endLat" value="43.2370583"></label>
         </div>
         <div>
-            <label>Финишная Долгота (Lon): <input type="text" id="endLon" readonly></label>
+            <label>Финишная Долгота (Lon): <input type="text" id="endLon" value="76.924322"></label>
         </div>
     </div>
+    <button id="routeButton">Построить маршрут</button>
 </div>
 
 <div>
     <label>Впишите адрес начальной точки: <input type="text" id="start-address" placeholder="Введите адрес"></label>
-    <button onclick="searchLocation('start')">Найти</button>
+    <button onclick="searchLocation()">Найти</button>
 </div>
 <div>
     <label>Впишите адрес конечной точки: <input type="text" id="end-address" placeholder="Введите адрес"></label>
-    <button onclick="searchLocation('end')">Найти</button>
+    <button onclick="searchLocation()">Найти</button>
 </div>
-
-<button id="routeButton">Построить маршрут</button>
 
 <div id="map"></div>
 
@@ -115,48 +118,15 @@
     let map;
     let routeLayer;
 
+    // Инициализация карты при загрузке страницы
     document.addEventListener("DOMContentLoaded", function () {
-        map = L.map('map').setView([48.0, 68.0], 5);
+        map = L.map('map').setView([48.0, 68.0], 5); // Центр Казахстана
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.Control.geocoder().addTo(map);
     });
 
-    async function getCoordinates(address) {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data.length > 0) {
-                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-            } else {
-                alert("Местоположение не найдено");
-            }
-        } catch (error) {
-            console.error("Ошибка геокодирования:", error);
-        }
-    }
-
-    async function searchLocation(type) {
-        const address = type === "start" ? document.getElementById("start-address").value : document.getElementById("end-address").value;
-        const coords = await getCoordinates(address);
-
-        if (coords) {
-            if (type === "start") {
-                document.getElementById("startLat").value = coords.lat;
-                document.getElementById("startLon").value = coords.lon;
-            } else {
-                document.getElementById("endLat").value = coords.lat;
-                document.getElementById("endLon").value = coords.lon;
-            }
-
-            L.marker([coords.lat, coords.lon]).addTo(map)
-                .bindPopup(`Координаты: ${coords.lat}, ${coords.lon}`)
-                .openPopup();
-            map.setView([coords.lat, coords.lon], 12);
-        }
-    }
-
     document.getElementById("routeButton").addEventListener("click", async function () {
+        // Получаем координаты из полей ввода
         const startLat = parseFloat(document.getElementById("startLat").value);
         const startLon = parseFloat(document.getElementById("startLon").value);
         const endLat = parseFloat(document.getElementById("endLat").value);
@@ -167,6 +137,7 @@
             return;
         }
 
+        // Показываем лоадер и блюрим страницу (кроме лоадера)
         document.getElementById("loader").style.display = "flex";
         document.body.classList.add("blurred");
 
@@ -174,20 +145,51 @@
             const response = await fetch(`http://localhost:8080/api/routes?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
             const routeCoordinates = await response.json();
 
+            // Убираем старый маршрут, если он есть
             if (routeLayer) {
                 map.removeLayer(routeLayer);
             }
 
-            routeLayer = L.polyline(routeCoordinates, { color: 'blue' }).addTo(map);
+            // Добавляем маршрут на карту
+            routeLayer = L.polyline(routeCoordinates, {color: 'blue'}).addTo(map);
             map.fitBounds(routeLayer.getBounds());
         } catch (error) {
             console.error("Ошибка загрузки маршрута:", error);
         } finally {
+            // Скрываем лоадер и убираем блюр
             document.getElementById("loader").style.display = "none";
             document.body.classList.remove("blurred");
         }
     });
-</script>
 
+    async function getCoordinates(address) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.length > 0) {
+                return { lat: data[0].lat, lon: data[0].lon };
+            } else {
+                alert("Местоположение не найдено");
+                // throw new Error("Местоположение не найдено");
+            }
+        } catch (error) {
+            console.error("Ошибка геокодирования:", error);
+        }
+    }
+
+    async function searchLocation() {
+        const address = document.getElementById("address").value;
+        const coords = await getCoordinates(address);
+
+        if (coords) {
+            L.marker([coords.lat, coords.lon]).addTo(map)
+                .bindPopup(`Координаты: ${coords.lat}, ${coords.lon}`)
+                .openPopup();
+            map.setView([coords.lat, coords.lon], 14);
+        }
+    }
+
+</script>
 </body>
 </html>

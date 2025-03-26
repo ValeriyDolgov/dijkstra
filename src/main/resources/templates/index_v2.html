@@ -78,37 +78,23 @@
 <div id="loader" style="display: none;">
     <div class="spinner"></div>
 </div>
-
-<div class="input-container">
-    <div>
-        <div>
-            <label>Стартовая Широта (Lat): <input type="text" id="startLat" readonly></label>
-        </div>
-        <div>
-            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" readonly></label>
-        </div>
-    </div>
-    <div>
-        <div>
-            <label>Финишная Широта (Lat): <input type="text" id="endLat" readonly></label>
-        </div>
-        <div>
-            <label>Финишная Долгота (Lon): <input type="text" id="endLon" readonly></label>
-        </div>
-    </div>
+<div>
+    <button onclick="showInput('address')">Ввод адреса</button>
+    <button onclick="showInput('coords')">Ввод координат</button>
+    <button onclick="showInput('map')">Выбор на карте</button>
 </div>
 
-<div>
-    <label>Впишите адрес начальной точки: <input type="text" id="start-address" placeholder="Введите адрес"></label>
-    <button onclick="searchLocation('start')">Найти</button>
+<div id="addressInput" class="input-container">
+    <label>Адрес: <input type="text" id="startAddress" placeholder="Введите адрес"></label>
+    <button onclick="searchLocation()">Найти</button>
 </div>
-<div>
-    <label>Впишите адрес конечной точки: <input type="text" id="end-address" placeholder="Введите адрес"></label>
-    <button onclick="searchLocation('end')">Найти</button>
+
+<div id="coordsInput" class="input-container">
+    <label>Широта: <input type="text" id="startLat"></label>
+    <label>Долгота: <input type="text" id="startLon"></label>
 </div>
 
 <button id="routeButton">Построить маршрут</button>
-
 <div id="map"></div>
 
 <script>
@@ -136,24 +122,27 @@
         }
     }
 
-    async function searchLocation(type) {
-        const address = type === "start" ? document.getElementById("start-address").value : document.getElementById("end-address").value;
-        const coords = await getCoordinates(address);
+    function showInput(type) {
+        document.querySelectorAll('.input-container').forEach(div => div.style.display = 'none');
+        document.getElementById(type + 'Input').style.display = 'block';
+    }
 
-        if (coords) {
-            if (type === "start") {
-                document.getElementById("startLat").value = coords.lat;
-                document.getElementById("startLon").value = coords.lon;
-            } else {
-                document.getElementById("endLat").value = coords.lat;
-                document.getElementById("endLon").value = coords.lon;
-            }
-
-            L.marker([coords.lat, coords.lon]).addTo(map)
-                .bindPopup(`Координаты: ${coords.lat}, ${coords.lon}`)
-                .openPopup();
-            map.setView([coords.lat, coords.lon], 12);
-        }
+    function searchLocation() {
+        const address = document.getElementById("startAddress").value;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    let lat = parseFloat(data[0].lat);
+                    let lon = parseFloat(data[0].lon);
+                    document.getElementById("startLat").value = lat;
+                    document.getElementById("startLon").value = lon;
+                    L.marker([lat, lon]).addTo(map).bindPopup(`Координаты: ${lat}, ${lon}`).openPopup();
+                    map.setView([lat, lon], 12);
+                } else {
+                    alert("Местоположение не найдено");
+                }
+            });
     }
 
     document.getElementById("routeButton").addEventListener("click", async function () {

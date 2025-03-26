@@ -27,12 +27,15 @@ public class GeoJsonGraphBuilder {
             if (geometry == null || !geometry.get("type").asText().equals("LineString")) continue;
 
             JsonNode coords = geometry.get("coordinates");
-            processRoadSegment(coords);
+            JsonNode properties = feature.get("properties");
+            processRoadSegment(coords, properties);
         }
     }
 
-    private void processRoadSegment(JsonNode coords) {
+    private void processRoadSegment(JsonNode coords, JsonNode properties) {
         String prevNode = null;
+        double roadMultiplier = getRoadMultiplier(properties);
+
         for (JsonNode coord : coords) {
             double lon = coord.get(0).asDouble(); // Долгота
             double lat = coord.get(1).asDouble(); // Широта
@@ -43,12 +46,66 @@ public class GeoJsonGraphBuilder {
 
             if (prevNode != null) {
                 double distance = haversineDistance(coordinatesMap.get(prevNode), coordinatesMap.get(nodeId));
+                double weightedDistance = distance * roadMultiplier;
                 DefaultWeightedEdge edge = graph.addEdge(prevNode, nodeId);
-                if (edge != null) graph.setEdgeWeight(edge, distance);
+                if (edge != null) graph.setEdgeWeight(edge, weightedDistance);
             }
 
             prevNode = nodeId;
         }
+    }
+
+    private double getRoadMultiplier(JsonNode properties) {
+        double multiplier = 1.0;
+
+        if (properties != null) {
+            String surface = properties.has("surface") ? properties.get("surface").asText() : "";
+            int lanes = properties.has("lanes") ? properties.get("lanes").asInt(1) : 1;
+            int maxspeed = properties.has("maxspeed") ? properties.get("maxspeed").asInt(50) : 50;
+            String roadType = properties.has("highway") ? properties.get("highway").asText() : "unknown";
+
+            switch (surface) {
+                case "asphalt":
+                case "paved":
+                    multiplier *= 1.0;
+                    break;
+                case "gravel":
+                    multiplier *= 1.2;
+                    break;
+                case "dirt":
+                    multiplier *= 1.5;
+                    break;
+                default:
+                    multiplier *= 1.3;
+                    break;
+            }
+
+            multiplier *= Math.max(1.0, 2.0 / lanes);
+            multiplier *= 50.0 / maxspeed;
+
+            switch (roadType) {
+                case "motorway":
+                    multiplier *= 0.9;
+                    break;
+                case "primary":
+                    multiplier *= 1.0;
+                    break;
+                case "secondary":
+                    multiplier *= 1.1;
+                    break;
+                case "tertiary":
+                    multiplier *= 1.2;
+                    break;
+                case "residential":
+                    multiplier *= 1.3;
+                    break;
+                default:
+                    multiplier *= 1.4;
+                    break;
+            }
+        }
+
+        return multiplier;
     }
 
     public List<double[]> findShortestPath(double[] start, double[] end) {
