@@ -100,12 +100,21 @@
 <script>
     let map;
     let routeLayer;
+    let startCoordLat;
+    let startCoordLon;
+    let endCoordLat;
+    let endCoordLon;
 
     document.addEventListener("DOMContentLoaded", function () {
         map = L.map('map').setView([48.0, 68.0], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.Control.geocoder().addTo(map);
     });
+
+    function showInput(type) {
+        document.querySelectorAll('.input-container').forEach(div => div.style.display = 'none');
+        document.getElementById(type + 'Input').style.display = 'block';
+    }
 
     async function getCoordinates(address) {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
@@ -122,34 +131,40 @@
         }
     }
 
-    function showInput(type) {
-        document.querySelectorAll('.input-container').forEach(div => div.style.display = 'none');
-        document.getElementById(type + 'Input').style.display = 'block';
-    }
+    async function searchLocation(type) {
+        const address = type === "start" ? document.getElementById("start-address").value : document.getElementById("end-address").value;
+        const coords = await getCoordinates(address);
 
-    function searchLocation() {
-        const address = document.getElementById("startAddress").value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    let lat = parseFloat(data[0].lat);
-                    let lon = parseFloat(data[0].lon);
-                    document.getElementById("startLat").value = lat;
-                    document.getElementById("startLon").value = lon;
-                    L.marker([lat, lon]).addTo(map).bindPopup(`Координаты: ${lat}, ${lon}`).openPopup();
-                    map.setView([lat, lon], 12);
-                } else {
-                    alert("Местоположение не найдено");
-                }
-            });
+        if (coords) {
+            if (type === "start") {
+                // document.getElementById("startLat").value = coords.lat;
+                // document.getElementById("startLon").value = coords.lon;
+                startCoordLat = coords.lat;
+                startCoordLon = coords.lon;
+            } else {
+                // document.getElementById("endLat").value = coords.lat;
+                // document.getElementById("endLon").value = coords.lon;
+                endCoordLat = coords.lat;
+                endCoordLon = coords.lon;
+            }
+
+            L.marker([coords.lat, coords.lon]).addTo(map)
+                .bindPopup(`Координаты: ${coords.lat}, ${coords.lon}`)
+                .openPopup();
+            map.setView([coords.lat, coords.lon], 12);
+        }
     }
 
     document.getElementById("routeButton").addEventListener("click", async function () {
-        const startLat = parseFloat(document.getElementById("startLat").value);
-        const startLon = parseFloat(document.getElementById("startLon").value);
-        const endLat = parseFloat(document.getElementById("endLat").value);
-        const endLon = parseFloat(document.getElementById("endLon").value);
+        // const startLat = parseFloat(document.getElementById("startLat").value);
+        // const startLon = parseFloat(document.getElementById("startLon").value);
+        // const endLat = parseFloat(document.getElementById("endLat").value);
+        // const endLon = parseFloat(document.getElementById("endLon").value);
+
+        const startLat = startCoordLat;
+        const startLon = startCoordLon;
+        const endLat = endCoordLat;
+        const endLon = endCoordLon;
 
         if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) {
             alert("Некорректные координаты!");

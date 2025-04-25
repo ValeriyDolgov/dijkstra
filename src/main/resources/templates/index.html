@@ -82,18 +82,22 @@
 <div class="input-container">
     <div>
         <div>
-            <label>Стартовая Широта (Lat): <input type="text" id="startLat" readonly></label>
+<!--            <label>Стартовая Широта (Lat): <input type="text" id="startLat" readonly></label>-->
+            <label>Стартовая Широта (Lat): <input type="text" id="startLat"></label>
         </div>
         <div>
-            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" readonly></label>
+<!--            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" readonly></label>-->
+            <label>Стартовая Долгота (Lon): <input type="text" id="startLon" ></label>
         </div>
     </div>
     <div>
         <div>
-            <label>Финишная Широта (Lat): <input type="text" id="endLat" readonly></label>
+<!--            <label>Финишная Широта (Lat): <input type="text" id="endLat" readonly></label>-->
+            <label>Финишная Широта (Lat): <input type="text" id="endLat"></label>
         </div>
         <div>
-            <label>Финишная Долгота (Lon): <input type="text" id="endLon" readonly></label>
+<!--            <label>Финишная Долгота (Lon): <input type="text" id="endLon" readonly></label>-->
+            <label>Финишная Долгота (Lon): <input type="text" id="endLon"></label>
         </div>
     </div>
 </div>
@@ -114,6 +118,7 @@
 <script>
     let map;
     let routeLayer;
+
 
     document.addEventListener("DOMContentLoaded", function () {
         map = L.map('map').setView([48.0, 68.0], 5);

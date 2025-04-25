@@ -65,8 +65,7 @@ public class GeoJsonGraphBuilder {
             String roadType = properties.has("highway") ? properties.get("highway").asText() : "unknown";
 
             switch (surface) {
-                case "asphalt":
-                case "paved":
+                case "asphalt", "paved":
                     multiplier *= 1.0;
                     break;
                 case "gravel":
