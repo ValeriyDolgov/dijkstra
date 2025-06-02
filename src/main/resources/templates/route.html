@@ -100,6 +100,57 @@
             margin: 10px;
             gap: 10px;
         }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0 10px;
+            }
+
+            input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0 10px;
+            }
+
+            .button-group button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .modal-content {
+                width: 90%;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #map {
+                height: 300px;
+            }
+
+            input, button {
+                font-size: 13px;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -132,6 +183,13 @@
     <button id="routeButtonCoord">Построить маршрут</button>
 </div>
 
+<!-- Ввод через карту -->
+<div id="mapInput" class="input-container">
+    <p>Кликните по карте, чтобы выбрать начальную и конечную точку</p>
+    <button id="routeButtonMap" style="display:none;">Построить маршрут</button>
+</div>
+
+
 <!-- Модалка ошибки -->
 <div id="errorModal" class="modal">
     <div class="modal-content">
@@ -158,6 +216,9 @@
     document.getElementById("closeModal").onclick = () =>
         document.getElementById("errorModal").style.display = "none";
 
+    let mapClickMode = false;
+    let clickCount = 0;
+
     function showInput(type) {
         document.querySelectorAll('.input-container').forEach(div => div.style.display = 'none');
         document.getElementById(type + 'Input').style.display = 'flex';
@@ -167,7 +228,45 @@
             map.removeLayer(routeLayer);
             routeLayer = null;
         }
+
+        // Включаем режим выбора на карте
+        if (type === 'map') {
+            mapClickMode = true;
+            clickCount = 0;
+            document.getElementById("routeButtonMap").style.display = "none";
+            map.on('click', handleMapClick);
+        } else {
+            // Выключаем режим выбора на карте
+            mapClickMode = false;
+            map.off('click', handleMapClick);
+        }
     }
+
+    function handleMapClick(e) {
+        const { lat, lng } = e.latlng;
+
+        if (clickCount === 0) {
+            startCoordLat = lat;
+            startCoordLon = lng;
+            startMarker = L.marker([lat, lng], { draggable: true })
+                .addTo(map).bindPopup("Начальная точка").openPopup();
+        } else if (clickCount === 1) {
+            endCoordLat = lat;
+            endCoordLon = lng;
+            endMarker = L.marker([lat, lng], { draggable: true })
+                .addTo(map).bindPopup("Конечная точка").openPopup();
+
+            document.getElementById("routeButtonMap").style.display = "inline-block";
+            mapClickMode = false; // отключаем режим выбора
+            map.off('click', handleMapClick);
+        }
+
+        clickCount++;
+    }
+
+    document.getElementById("routeButtonMap").addEventListener("click", () =>
+        buildRoute(startCoordLat, startCoordLon, endCoordLat, endCoordLon)
+    );
 
     async function getCoordinates(address) {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
