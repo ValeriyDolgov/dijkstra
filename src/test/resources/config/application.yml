@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: advance24-service
+  datasource:
+    url: jdbc:tc:postgresql:11.21-alpine:///test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate.temp.use_jdbc_metadata_defaults: false
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    out-of-order: true

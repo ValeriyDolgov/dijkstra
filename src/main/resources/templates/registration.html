@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{_fragments.html :: head ('Регистрация водителя')}">
+    <title></title>
+</head>
+<body>
+<div class="container">
+    <form class="user-form" action="#" th:action="@{/register}" th:object="${registrationData}" method="POST">
+        <h2 class="user-form-header">Регистрация водителя</h2>
+        <label>
+            <input type="text" th:field="*{fio}" placeholder="ФИО водителя" class="form-control mb-4 col-10" required/>
+        </label>
+        <br/>
+        <label>
+            <input type="text" th:field="*{email}" placeholder="example.e@email.com"
+                   class="form-control mb-4 col-15"
+                   required/>
+        </label>
+        <label>
+            <input type="text" th:field="*{mobileNumber}" placeholder="Мобильный номер" class="form-control mb-4"/>
+        </label>
+        <label>
+            <input type="text" th:field="*{password}" placeholder="Пароль" class="form-control mb-4" required/>
+        </label>
+        <label>
+            <input type="text" th:field="*{driverIdNumber}" placeholder="Номер водительского удостоверения" class="form-control mb-4 "/>
+        </label><br/>
+        <button type="submit" class="btn btn-info col-2.5">Зарегистрироваться</button>
+    </form>
+</div>
+</body>
+</html>

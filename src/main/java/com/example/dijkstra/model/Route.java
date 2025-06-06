@@ -32,4 +32,10 @@ public class Route {
     private Double weight;
     @ManyToOne(fetch = FetchType.EAGER)
     private RouteStatus routeStatus;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "driver_id")
+    private User driver;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "manager_id")
+    private User manager;
 }

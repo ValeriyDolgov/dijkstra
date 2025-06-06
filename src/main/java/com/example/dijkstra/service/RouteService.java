@@ -1,0 +1,66 @@
+package com.example.dijkstra.service;
+
+import com.example.dijkstra.controller.request.CreateRouteRequest;
+import com.example.dijkstra.controller.response.AllRouteResponse;
+import com.example.dijkstra.controller.response.DetailRouteResponse;
+import com.example.dijkstra.model.Route;
+import com.example.dijkstra.model.RouteStatus;
+import com.example.dijkstra.model.User;
+import com.example.dijkstra.repository.RouteRepository;
+import com.example.dijkstra.repository.RouteStatusRepository;
+import com.example.dijkstra.service.mapper.RouteMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class RouteService {
+    private final RouteMapper routeMapper;
+    private final RouteRepository routeRepository;
+    private final RouteStatusRepository routeStatusRepository;
+    private final GeocodingService geocodingService;
+    private final GeoJsonGraphBuilder geoJsonGraphBuilder;
+
+    public Route findById(Long id) {
+        return routeRepository.findById(id).orElseThrow(() -> new RuntimeException("Route not found"));
+    }
+
+    public List<AllRouteResponse> findAll() {
+        var allRoutes = routeRepository.findAll();
+        return routeMapper.toAllRouteResponseList(allRoutes);
+    }
+
+    @Transactional
+    public DetailRouteResponse createRoute(CreateRouteRequest request, User manager) {
+        var startAddress = geocodingService.reverseGeocode(request.getStartLat(), request.getStartLon());
+        var endAddress = geocodingService.reverseGeocode(request.getEndLat(), request.getEndLon());
+        var newRoute = new Route();
+        newRoute.setStartAddress(startAddress);
+        newRoute.setEndAddress(endAddress);
+        newRoute.setWeight(request.getWeight());
+        newRoute.setCargoName(request.getCargoName());
+        newRoute.setRouteStatus(routeStatusRepository.findById(RouteStatus.STATUS_NEW).get());
+        var routeCoords = geoJsonGraphBuilder.findShortestPath(new double[]{request.getStartLat(), request.getStartLon()},
+                                                               new double[]{request.getEndLat(), request.getEndLon()});
+        newRoute.setRouteCoords(routeCoords);
+        newRoute.setManager(manager);
+        var createdEntity = routeRepository.save(newRoute);
+        return routeMapper.toDetailRouteResponse(createdEntity);
+    }
+
+    public void assignRoute(Long id, User driver) {
+        var route = findById(id);
+        route.setDriver(driver);
+        route.setRouteStatus(routeStatusRepository.findById(RouteStatus.STATUS_TAKEN).get());
+        routeRepository.save(route);
+    }
+
+    public DetailRouteResponse getRoute(Long id) {
+        var route = findById(id);
+        return routeMapper.toDetailRouteResponse(route);
+    }
+
+}

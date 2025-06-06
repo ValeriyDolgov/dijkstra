@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{_fragments.html :: head ('Login')}">
+    <title></title>
+</head>
+<body>
+<div class="container">
+    <form th:action="@{/login}" method="POST" class="user-form">
+        <h2 class="form-signin-heading">Please sign in</h2>
+        <p th:if="${loginError}" class="warning">Неверный пароль или логин</p>
+        <p>
+            <label for="username" class="sr-only">
+                Email
+            </label>
+            <input type="text" id="username" name="username" class="form-control" placeholder="Email" required
+                   autofocus="autofocus"/> <br/>
+        </p>
+        <p>
+            <label for="password" class="sr-only">
+                Пароль
+            </label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Пароль" required/>
+            <br/>
+        </p>
+        <p>
+            <input type="checkbox" name="remember-me"/> Запомнить вход
+        </p>
+        <input class="btn btn-lg btn-primary btn-block" type="submit" value="Войти"/>
+        <a th:href="@{/register}" class="btn btn-lg badge-success btn-block">Зарегистрироваться</a>
+    </form>
+</div>
+</body>
+</html>

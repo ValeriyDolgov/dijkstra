@@ -18,3 +18,5 @@ logging:
     root: info
 server:
   port: 8080
+cors:
+  allowed-hosts: http://localhost:5173

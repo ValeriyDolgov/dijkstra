@@ -4,9 +4,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 public enum Role implements GrantedAuthority {
     SUPER_ADMIN,
-    ADMIN,
     MANAGER,
-    OPERATOR,
     DRIVER;
 
     @Override
