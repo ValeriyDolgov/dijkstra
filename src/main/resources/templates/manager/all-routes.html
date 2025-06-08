@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="_fragments.html :: head ('Программы')">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div th:insert="~{navbar-manager}"></div>
+<div class="container">
+    <h1> Список всех маршрутов </h1>
+    <br/>
+
+    <p th:each="route : ${routes}">
+        <a th:href="@{/manager/routes/{routeId} (routeId=${route.id})}" th:text="${route.cargoName}"></a>
+        <br/>
+    </p>
+</div>
+</body>
+</html>

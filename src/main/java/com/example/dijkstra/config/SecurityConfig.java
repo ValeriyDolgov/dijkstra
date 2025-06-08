@@ -35,12 +35,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsFilter()))
             .authorizeHttpRequests(conf -> conf.requestMatchers("/",
                                                                 "/register",
-                                                                "/sendEmail",
-                                                                "/restorePassword/**", "/public/css/**",
+                                                                "/api/**",
+                                                                "/restorePassword/**",
+                                                                "/public/css/**",
                                                                 "/user/assets/**",
                                                                 "/user/webjars/**",
                                                                 "/assets/**").permitAll().anyRequest().authenticated())
-            .formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login-error").defaultSuccessUrl("/").permitAll())
+            .formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login-error").defaultSuccessUrl("/", true).permitAll())
             .rememberMe(conf -> conf.tokenValiditySeconds(5 * 24 * 60 * 60).key("AbcdefghiJklmNoPqRstUvXyz"))
             .logout(conf -> conf.logoutSuccessUrl("/logout").deleteCookies("JSESSIONID", "remember-me"));
         return http.build();

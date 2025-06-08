@@ -9,6 +9,9 @@ import com.example.dijkstra.model.User;
 import com.example.dijkstra.repository.RouteRepository;
 import com.example.dijkstra.repository.RouteStatusRepository;
 import com.example.dijkstra.service.mapper.RouteMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +37,7 @@ public class RouteService {
     }
 
     @Transactional
-    public DetailRouteResponse createRoute(CreateRouteRequest request, User manager) {
+    public DetailRouteResponse createRoute(CreateRouteRequest request, User manager) throws JsonProcessingException {
         var startAddress = geocodingService.reverseGeocode(request.getStartLat(), request.getStartLon());
         var endAddress = geocodingService.reverseGeocode(request.getEndLat(), request.getEndLon());
         var newRoute = new Route();
@@ -43,9 +46,8 @@ public class RouteService {
         newRoute.setWeight(request.getWeight());
         newRoute.setCargoName(request.getCargoName());
         newRoute.setRouteStatus(routeStatusRepository.findById(RouteStatus.STATUS_NEW).get());
-        var routeCoords = geoJsonGraphBuilder.findShortestPath(new double[]{request.getStartLat(), request.getStartLon()},
-                                                               new double[]{request.getEndLat(), request.getEndLon()});
-        newRoute.setRouteCoords(routeCoords);
+        ObjectMapper mapper = new ObjectMapper();
+        newRoute.setRouteCoords(mapper.readValue(request.getPathCoords(), new TypeReference<List<double[]>>() {}));
         newRoute.setManager(manager);
         var createdEntity = routeRepository.save(newRoute);
         return routeMapper.toDetailRouteResponse(createdEntity);

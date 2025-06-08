@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Создание маршрута</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Geocoder -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+    <style>
+        body.blurred {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid lightgray;
+            border-top: 5px solid blue;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+
+        .input-container {
+            display: none;
+            margin: 10px auto;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 5px;
+            font-size: 14px;
+            width: 150px;
+        }
+
+        button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-button {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin: 10px;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0 10px;
+            }
+
+            input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0 10px;
+            }
+
+            .button-group button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .modal-content {
+                width: 90%;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #map {
+                height: 300px;
+            }
+
+            input, button {
+                font-size: 13px;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align: center;">Создание маршрута</h2>
+
+<!-- Форма -->
+<form th:action="@{/manager/create/route}" method="post" id="saveForm">
+    <input  id="startLatHid" name="startLat" th:value="${route.startLat}">
+    <input  id="startLonHid" name="startLon" th:value="${route.startLon}">
+    <input  id="endLatHid" name="endLat" th:value="${route.endLat}">
+    <input  id="endLonHid" name="endLon" th:value="${route.endLon}">
+    <input name="pathCoords" id="routeCoordsInput">
+
+    <div style="display: flex; flex-direction: column; align-items: center; margin: 20px;">
+        <label>
+            Название груза:
+            <input type="text" name="cargoName" required>
+        </label>
+        <label>
+            Вес (кг):
+            <input type="number" name="weight" step="0.01" required>
+        </label>
+    </div>
+</form>
+
+<!-- Loader -->
+<div id="loader"><div class="spinner"></div></div>
+
+<!-- Кнопки управления -->
+<div class="button-group">
+    <button onclick="showInput('address')">Ввод адреса</button>
+    <button onclick="showInput('coords')">Ввод координат</button>
+    <button onclick="showInput('map')">Выбор на карте</button>
+</div>
+
+<!-- Ввод по адресу -->
+<div id="addressInput" class="input-container">
+    <label>Начальный адрес: <input type="text" id="start-address" placeholder="Введите адрес"></label>
+    <button onclick="searchLocation('start')">Найти</button>
+    <label>Конечный адрес: <input type="text" id="end-address" placeholder="Введите адрес"></label>
+    <button onclick="searchLocation('end')">Найти</button>
+    <button id="routeButtonAddress">Построить маршрут</button>
+</div>
+
+<!-- Ввод по координатам -->
+<div id="coordsInput" class="input-container">
+    <label>Широта: <input type="text" id="startLat"></label>
+    <label>Долгота: <input type="text" id="startLon"></label>
+    <label>Широта: <input type="text" id="endLat"></label>
+    <label>Долгота: <input type="text" id="endLon"></label>
+    <button id="routeButtonCoord">Построить маршрут</button>
+</div>
+
+<!-- Ввод через карту -->
+<div id="mapInput" class="input-container">
+    <p>Кликните по карте, чтобы выбрать начальную и конечную точку</p>
+    <button id="routeButtonMap" style="display:none;">Построить маршрут</button>
+</div>
+
+
+<!-- Модалка ошибки -->
+<div id="errorModal" class="modal">
+    <div class="modal-content">
+        <span id="closeModal" class="close-button">&times;</span>
+        <p id="errorMessage">Произошла ошибка</p>
+    </div>
+</div>
+
+<!-- Кнопка "Сохранить маршрут" -->
+<div style="text-align: center; margin-top: 20px;">
+    <button onclick="submitForm()">Сохранить маршрут</button>
+</div>
+
+<!-- Карта -->
+<div id="map"></div>
+
+<!-- Лоадер, Модалка и Сценарии из вашего шаблона -->
+<!-- ... скрипт и стили как вы описали ... -->
+
+<script>
+    // Ваш код выбора точек, поиска, геокодинга и построения маршрута...
+
+    let map, routeLayer, markers = [];
+    let startCoordLat, startCoordLon, endCoordLat, endCoordLon;
+    let startMarker = null, endMarker = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        map = L.map('map').setView([48.0, 68.0], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.Control.geocoder().addTo(map);
+        showInput('address');
+    });
+
+    document.getElementById("closeModal").onclick = () =>
+        document.getElementById("errorModal").style.display = "none";
+
+    let mapClickMode = false;
+    let clickCount = 0;
+
+    function showInput(type) {
+        document.querySelectorAll('.input-container').forEach(div => div.style.display = 'none');
+        document.getElementById(type + 'Input').style.display = 'flex';
+
+        clearMarkers();
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+            routeLayer = null;
+        }
+
+        // Включаем режим выбора на карте
+        if (type === 'map') {
+            mapClickMode = true;
+            clickCount = 0;
+            document.getElementById("routeButtonMap").style.display = "none";
+            map.on('click', handleMapClick);
+        } else {
+            // Выключаем режим выбора на карте
+            mapClickMode = false;
+            map.off('click', handleMapClick);
+        }
+    }
+
+    function handleMapClick(e) {
+        const { lat, lng } = e.latlng;
+
+        if (clickCount === 0) {
+            startCoordLat = lat;
+            startCoordLon = lng;
+            startMarker = L.marker([lat, lng], { draggable: true })
+                .addTo(map).bindPopup("Начальная точка").openPopup();
+        } else if (clickCount === 1) {
+            endCoordLat = lat;
+            endCoordLon = lng;
+            endMarker = L.marker([lat, lng], { draggable: true })
+                .addTo(map).bindPopup("Конечная точка").openPopup();
+
+            document.getElementById("routeButtonMap").style.display = "inline-block";
+            mapClickMode = false; // отключаем режим выбора
+            map.off('click', handleMapClick);
+        }
+
+        clickCount++;
+    }
+
+    document.getElementById("routeButtonMap").addEventListener("click", () =>
+        buildRoute(startCoordLat, startCoordLon, endCoordLat, endCoordLon)
+    );
+
+    async function getCoordinates(address) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.length > 0 ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
+        } catch (error) {
+            console.error("Ошибка геокодирования:", error);
+            return null;
+        }
+    }
+
+    function clearMarkers() {
+        if (startMarker) map.removeLayer(startMarker);
+        if (endMarker) map.removeLayer(endMarker);
+        markers.forEach(marker => map.removeLayer(marker));
+        markers = [];
+        startMarker = null;
+        endMarker = null;
+    }
+
+    async function searchLocation(type) {
+        const address = document.getElementById(`${type}-address`).value;
+        const coords = await getCoordinates(address);
+        if (!coords) {
+            alert("Местоположение не найдено");
+            return;
+        }
+
+        if (type === "start") {
+            startCoordLat = coords.lat;
+            startCoordLon = coords.lon;
+            startMarker = L.marker([coords.lat, coords.lon]).addTo(map)
+                .bindPopup(`Начальная точка: ${coords.lat}, ${coords.lon}`).openPopup();
+        } else {
+            endCoordLat = coords.lat;
+            endCoordLon = coords.lon;
+            endMarker = L.marker([coords.lat, coords.lon]).addTo(map)
+                .bindPopup(`Конечная точка: ${coords.lat}, ${coords.lon}`).openPopup();
+        }
+
+        map.setView([coords.lat, coords.lon], 13);
+    }
+
+    // После построения маршрута сохраняем координаты в скрытые input
+    async function buildRoute(startLat, startLon, endLat, endLon) {
+        if ([startLat, startLon, endLat, endLon].some(isNaN)) {
+            alert("Некорректные координаты!");
+            return;
+        }
+
+        document.getElementById("loader").style.display = "flex";
+        document.body.classList.add("blurred");
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/routes?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
+            const routeCoordinates = await response.json();
+            if (routeLayer) map.removeLayer(routeLayer);
+            routeLayer = L.polyline(routeCoordinates, { color: 'blue' }).addTo(map);
+            map.fitBounds(routeLayer.getBounds());
+
+            // Устанавливаем значения в скрытые input
+            document.getElementById("startLatHid").value = startLat;
+            document.getElementById("startLonHid").value = startLon;
+            document.getElementById("endLatHid").value = endLat;
+            document.getElementById("endLonHid").value = endLon;
+            document.getElementById("routeCoordsInput").value = JSON.stringify(routeCoordinates);
+        } catch (error) {
+            console.error("Ошибка при построении маршрута", error);
+            showErrorModal("Не удалось построить маршрут.");
+        } finally {
+            document.getElementById("loader").style.display = "none";
+            document.body.classList.remove("blurred");
+        }
+    }
+
+    function showErrorModal(message) {
+        document.getElementById("errorMessage").textContent = message;
+        document.getElementById("errorModal").style.display = "flex";
+    }
+
+    document.getElementById("routeButtonAddress").addEventListener("click", () =>
+        buildRoute(startCoordLat, startCoordLon, endCoordLat, endCoordLon)
+    );
+
+    document.getElementById("routeButtonCoord").addEventListener("click", () => {
+        const startLat = parseFloat(document.getElementById("startLatHid").value);
+        const startLon = parseFloat(document.getElementById("startLonHid").value);
+        const endLat = parseFloat(document.getElementById("endLatHid").value);
+        const endLon = parseFloat(document.getElementById("endLonHid").value);
+        buildRoute(startLat, startLon, endLat, endLon);
+    });
+
+    function submitForm() {
+        const startLat = document.getElementById("startLatHid").value;
+        const startLon = document.getElementById("startLonHid").value;
+        const endLat = document.getElementById("endLatHid").value;
+        const endLon = document.getElementById("endLonHid").value;
+
+        if (!startLat || !startLon || !endLat || !endLon) {
+            alert("Сначала постройте маршрут!");
+            return;
+        }
+
+        document.getElementById("saveForm").submit();
+    }
+</script>
+
+</body>
+</html>

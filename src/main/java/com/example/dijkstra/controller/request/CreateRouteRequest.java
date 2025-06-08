@@ -8,6 +8,7 @@ public class CreateRouteRequest {
     private Double startLon;
     private Double endLat;
     private Double endLon;
+    private String pathCoords;
     private String cargoName;
     private Double weight;
 }
