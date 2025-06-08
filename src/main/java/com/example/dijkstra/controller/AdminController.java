@@ -21,26 +21,24 @@ public class AdminController {
 
     @GetMapping
     public String mainPage() {
-        return "driver/index";
+        return "admin/index";
     }
 
     @GetMapping("/create/manager")
     public String showEdProgramForm(Model model) {
         var request = new CreateManagerRequest();
         model.addAttribute("manager", request);
-        return "create-ed-program";
+        return "admin/create-manager";
     }
 
-    @PostMapping("/create/route")
+    @PostMapping("/create/manager")
     public String saveNewEdProgram(Model model, @ModelAttribute CreateManagerRequest request) {
-        String response = null;
         try {
-            response = userService.createManagerUser(request);
+            userService.createManagerUser(request);
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
+            return "admin/create-manager";
         }
-        model.addAttribute("password", response);
-        return "create-ed-program";
+        return "admin/index";
     }
-
 }

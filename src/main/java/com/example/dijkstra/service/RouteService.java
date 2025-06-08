@@ -36,6 +36,16 @@ public class RouteService {
         return routeMapper.toAllRouteResponseList(allRoutes);
     }
 
+    public List<AllRouteResponse> findAllDriverRoutes(User user) {
+        var allRoutes = routeRepository.findAllByDriver(user);
+        return routeMapper.toAllRouteResponseList(allRoutes);
+    }
+
+    public List<AllRouteResponse> findAllAvailableRoutes() {
+        var allRoutes = routeRepository.findAllByStatus_Id(RouteStatus.STATUS_NEW);
+        return routeMapper.toAllRouteResponseList(allRoutes);
+    }
+
     @Transactional
     public DetailRouteResponse createRoute(CreateRouteRequest request, User manager) throws JsonProcessingException {
         var startAddress = geocodingService.reverseGeocode(request.getStartLat(), request.getStartLon());

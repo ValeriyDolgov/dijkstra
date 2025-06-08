@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head th:replace="~{_fragments.html :: head ('Маршрут')}">
+<head th:replace="~{_fragments.html :: head ('Главная')}">
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
 <body>
-<div th:insert="~{manager/navbar-manager}"></div>
+<div th:insert="~{driver/navbar}"></div>
 <br>
 <h1>
     Приветсвую: <span th:text="${#authentication.principal.username}"></span>!

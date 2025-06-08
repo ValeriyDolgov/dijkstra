@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{_fragments.html :: head ('Создание менеджера')}"> </head>
+<body>
+<div th:insert="~{manager/navbar-manager}"></div>
+
+<!-- Форма -->
+<form class="user-form" action="#" th:action="@{/admin/create/manager}" th:object="${manager}" method="POST">
+    <h2 class="user-form-header">Регистрация менеджера</h2>
+    <label>
+        <input type="text" th:field="*{fio}" placeholder="ФИО менеджера" class="form-control mb-4 col-10" required/>
+    </label>
+    <br/>
+    <label>
+        <input type="text" th:field="*{email}" placeholder="example.e@email.com"
+               class="form-control mb-4 col-15"
+               required/>
+    </label>
+    <label>
+        <input type="text" th:field="*{mobileNumber}" placeholder="Мобильный номер" class="form-control mb-4"/>
+    </label>
+    <label>
+        <input type="text" th:field="*{password}" placeholder="Пароль" class="form-control mb-4" required/>
+    </label><br/>
+    <button type="submit" class="btn btn-info col-2.5">Зарегистрировать</button>
+</form>
+
+</body>
+</html>

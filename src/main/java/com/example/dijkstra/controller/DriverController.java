@@ -23,11 +23,18 @@ public class DriverController {
         return "driver/index";
     }
 
-    @GetMapping("/routes")
+    @GetMapping("/routes/all")
     public String getAllNotModeratedCourses(Model model) {
-        var allNotModeratedPrograms = routeService.findAll();
-        model.addAttribute("programs", allNotModeratedPrograms);
-        return "driver/routes";
+        var allNotModeratedPrograms = routeService.findAllAvailableRoutes();
+        model.addAttribute("routes", allNotModeratedPrograms);
+        return "driver/all-routes";
+    }
+
+    @GetMapping("/routes")
+    public String getAllNotModeratedCourses(Model model, User user) {
+        var allNotModeratedPrograms = routeService.findAllDriverRoutes(user);
+        model.addAttribute("routes", allNotModeratedPrograms);
+        return "driver/all-routes";
     }
 
     @GetMapping("/routes/{routeId}")
@@ -37,10 +44,10 @@ public class DriverController {
             routeData = routeService.getRoute(routeId);
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
-            return "driver/create-route";
+            return "driver/route";
         }
         model.addAttribute("route", routeData);
-        return "driver/create-route";
+        return "driver/route";
     }
 
     @PostMapping("/routes/{routeId}")
@@ -50,6 +57,6 @@ public class DriverController {
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
         }
-        return "create-ed-program";
+        return "redirect:/driver/routes/" + routeId;
     }
 }

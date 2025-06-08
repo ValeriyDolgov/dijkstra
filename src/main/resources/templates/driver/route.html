@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{_fragments.html :: head ('Маршрут')}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 500px;
+            margin-bottom: 20px;
+        }
+
+        body.blurred {
+            filter: blur(2px);
+        }
+
+        #loader {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+<div th:insert="~{driver/navbar}"></div>
+
+<div class="container" th:if="${route != null}">
+    <h1>Информация о маршруте</h1>
+
+    <table class="table table-bordered">
+        <tr>
+            <th>ID маршрута</th>
+            <td th:text="${route.id}"></td>
+        </tr>
+        <tr>
+            <th>Груз</th>
+            <td th:text="${route.cargoName}"></td>
+        </tr>
+        <tr>
+            <th>Откуда</th>
+            <td th:text="${route.startAddress}"></td>
+        </tr>
+        <tr>
+            <th>Куда</th>
+            <td th:text="${route.endAddress}"></td>
+        </tr>
+        <tr>
+            <th>Дата начала</th>
+            <td th:text="${#temporals.format(route.startDate, 'dd.MM.yyyy HH:mm')}"></td>
+        </tr>
+        <tr>
+            <th>Вес (т)</th>
+            <td th:text="${route.weight}"></td>
+        </tr>
+        <tr>
+            <th>Водитель</th>
+            <td th:text="${route.driver != null ? route.driver.fio : '—'}"></td>
+        </tr>
+        <tr>
+            <th>Менеджер</th>
+            <td th:text="${route.manager != null ? route.manager.fio : '—'}"></td>
+        </tr>
+    </table>
+    <div th:if="${route.status == 'NEW'}">
+        <form th:action="@{'/driver/routes/' + ${route.id}}" method="post">
+            <button type="submit" class="btn btn-primary">Принять маршрут</button>
+        </form>
+    </div>
+    <br/>
+</div>
+
+
+<!-- Loader -->
+<div id="loader">
+    <div class="spinner"></div>
+</div>
+
+<div class="container">
+    <span th:if="${errorMessage}" th:text="${errorMessage}" class="alert alert-warning">Ошибка</span>
+</div>
+
+<!-- Leaflet -->
+<div style="display: flex; justify-content: center;">
+    <iframe id="mapFrame" src="/map.html"
+            style="width: 80%; height: 500px; border: none;"></iframe>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const routeCoords = /*[[${route.routeCoords}]]*/ [];
+
+    // Ждём, пока iframe загрузится
+    const iframe = document.getElementById('mapFrame');
+    iframe.onload = () => {
+        iframe.contentWindow.postMessage({ coords: routeCoords }, '*');
+    };
+    /*]]>*/
+</script>
+</body>
+</html>

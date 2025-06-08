@@ -45,7 +45,7 @@ public class SecurityConfig {
                                                                 "/assets/**").permitAll().anyRequest().authenticated())
             .formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login-error").defaultSuccessUrl("/", true).permitAll())
             .rememberMe(conf -> conf.tokenValiditySeconds(5 * 24 * 60 * 60).key("AbcdefghiJklmNoPqRstUvXyz"))
-            .logout(conf -> conf.logoutSuccessUrl("/logout").deleteCookies("JSESSIONID", "remember-me"));
+            .logout(conf -> conf.logoutUrl("/logout").logoutSuccessUrl("/").deleteCookies("JSESSIONID", "remember-me"));
         return http.build();
     }
 

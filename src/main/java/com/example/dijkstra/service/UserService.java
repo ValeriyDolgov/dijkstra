@@ -32,18 +32,10 @@ public class UserService implements UserDetailsService {
         userRepository.save(newUser);
     }
 
-    public String createManagerUser(CreateManagerRequest createUserRequest) {
+    public void createManagerUser(CreateManagerRequest createUserRequest) {
         var newUser = userMapper.createManagerUser(createUserRequest);
-        var pass = generateRandomString(10);
-        newUser.setPassword(passwordEncoder.encode(pass));
+        newUser.setPassword(passwordEncoder.encode(createUserRequest.getPassword()));
         userRepository.save(newUser);
-        return pass;
-    }
-
-    public static String generateRandomString(int length) {
-        byte[] array = new byte[length];
-        new Random().nextBytes(array);
-        return new String(array, Charset.forName("UTF-8"));
     }
 
     @Override

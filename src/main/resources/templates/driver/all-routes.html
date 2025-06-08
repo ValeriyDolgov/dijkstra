@@ -4,14 +4,14 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<div th:insert="~{manager/navbar-manager}"></div>
+<div th:insert="~{driver/navbar}"></div>
 <div class="container">
     <h1> Список всех маршрутов </h1>
     <br/>
 
     <div th:each="route : ${routes}" class="card mb-3 p-3 border">
         <h5>
-            <a th:href="@{/manager/routes/{routeId}(routeId=${route.id})}" th:text="${route.cargoName}">Название груза</a>
+            <a th:href="@{/driver/routes/{routeId}(routeId=${route.id})}" th:text="${route.cargoName}">Название груза</a>
         </h5>
         <p><strong>Откуда:</strong> <span th:text="${route.startAddress}">Адрес отправления</span></p>
         <p><strong>Куда:</strong> <span th:text="${route.endAddress}">Адрес прибытия</span></p>
@@ -20,6 +20,7 @@
         <p><strong>Водитель:</strong> <span th:text="${route.driver != null ? route.driver.fio : '—'}">Имя водителя</span></p>
         <p><strong>Менеджер:</strong> <span th:text="${route.manager != null ? route.manager.fio : '—'}">Имя менеджера</span></p>
     </div>
+
 </div>
 </body>
 </html>
