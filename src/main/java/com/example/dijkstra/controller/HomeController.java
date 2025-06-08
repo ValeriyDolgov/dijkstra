@@ -12,9 +12,7 @@ public class HomeController {
     public String index(Authentication authentication) {
         if (authentication == null) {
             return "redirect:/login";
-        } else if (authentication.getAuthorities().contains(Role.SUPER_ADMIN)) {
-            return "redirect:/admin";
-        } else if (authentication.getAuthorities().contains(Role.MANAGER)) {
+        } else if (authentication.getAuthorities().contains(Role.SUPER_ADMIN) || authentication.getAuthorities().contains(Role.MANAGER)) {
             return "redirect:/manager";
         } else {
             return "redirect:/driver";

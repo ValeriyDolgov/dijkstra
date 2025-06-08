@@ -2,6 +2,8 @@ package com.example.dijkstra.controller.request;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class CreateRouteRequest {
     private Double startLat;
@@ -11,4 +13,5 @@ public class CreateRouteRequest {
     private String pathCoords;
     private String cargoName;
     private Double weight;
+    private LocalDateTime startDate;
 }

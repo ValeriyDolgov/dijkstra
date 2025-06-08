@@ -60,7 +60,7 @@ public class ManagerController {
             return "manager/create-route";
         }
         model.addAttribute("route", response);
-        return "forward:/manager/routes/" + response.getId();
+        return "redirect:/manager/routes/" + response.getId();
     }
 
 }

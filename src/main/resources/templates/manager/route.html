@@ -85,8 +85,6 @@
             <td th:text="${route.status}"></td>
         </tr>
     </table>
-
-    <div id="map"></div>
 </div>
 
 <!-- Loader -->
@@ -99,27 +97,20 @@
 </div>
 
 <!-- Leaflet -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div style="display: flex; justify-content: center;">
+    <iframe id="mapFrame" src="/map.html"
+            style="width: 80%; height: 500px; border: none;"></iframe>
+</div>
 
-<!-- Map Initialization -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const routeCoords = /*[[${route.routeCoords}]]*/ [];
 
-    const map = L.map('map').setView([51.1605, 71.4704], 6); // Центр Казахстана по умолчанию
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-
-    if (routeCoords.length > 0) {
-        const polyline = L.polyline(routeCoords, { color: 'blue' }).addTo(map);
-        map.fitBounds(polyline.getBounds());
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 0);
-    }
+    // Ждём, пока iframe загрузится
+    const iframe = document.getElementById('mapFrame');
+    iframe.onload = () => {
+        iframe.contentWindow.postMessage({ coords: routeCoords }, '*');
+    };
     /*]]>*/
 </script>
 </body>

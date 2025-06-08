@@ -16,14 +16,14 @@ public interface RouteMapper {
     @Mapping(target = "manager.id", source = "manager.id")
     @Mapping(target = "driver.fio", source = "driver.fio")
     @Mapping(target = "manager.fio", source = "manager.fio")
-    @Mapping(target = "status", source = "routeStatus.name")
+    @Mapping(target = "status", source = "status.name")
     AllRouteResponse toAllRouteResponse(Route route);
 
     @Mapping(target = "driver.id", source = "driver.id")
     @Mapping(target = "manager.id", source = "manager.id")
     @Mapping(target = "driver.fio", source = "driver.fio")
     @Mapping(target = "manager.fio", source = "manager.fio")
-    @Mapping(target = "status", source = "routeStatus.name")
+    @Mapping(target = "status", source = "status.name")
     DetailRouteResponse toDetailRouteResponse(Route route);
 
     List<AllRouteResponse> toAllRouteResponseList(List<Route> routes);

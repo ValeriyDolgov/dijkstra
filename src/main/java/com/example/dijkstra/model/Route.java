@@ -31,7 +31,7 @@ public class Route {
     @Column(name = "weight")
     private Double weight;
     @ManyToOne(fetch = FetchType.EAGER)
-    private RouteStatus routeStatus;
+    private RouteStatus status;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "driver_id")
     private User driver;

@@ -45,7 +45,8 @@ public class RouteService {
         newRoute.setEndAddress(endAddress);
         newRoute.setWeight(request.getWeight());
         newRoute.setCargoName(request.getCargoName());
-        newRoute.setRouteStatus(routeStatusRepository.findById(RouteStatus.STATUS_NEW).get());
+        newRoute.setStartDate(request.getStartDate());
+        newRoute.setStatus(routeStatusRepository.findById(RouteStatus.STATUS_NEW).get());
         ObjectMapper mapper = new ObjectMapper();
         newRoute.setRouteCoords(mapper.readValue(request.getPathCoords(), new TypeReference<List<double[]>>() {}));
         newRoute.setManager(manager);
@@ -56,7 +57,7 @@ public class RouteService {
     public void assignRoute(Long id, User driver) {
         var route = findById(id);
         route.setDriver(driver);
-        route.setRouteStatus(routeStatusRepository.findById(RouteStatus.STATUS_TAKEN).get());
+        route.setStatus(routeStatusRepository.findById(RouteStatus.STATUS_TAKEN).get());
         routeRepository.save(route);
     }
 
