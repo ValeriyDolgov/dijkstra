@@ -3,7 +3,7 @@ spring:
     name: dijkstra
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/node?prepareTreshold=0
+    url: jdbc:postgresql://host.docker.internal:5432/node?prepareTreshold=0
     username: user
     password: postgres
   jpa:
@@ -18,5 +18,7 @@ logging:
     root: info
 server:
   port: 8080
+  servlet:
+    context-path: /panel
 cors:
-  allowed-hosts: http://localhost:5173
+  allowed-hosts: http://localhost:5173, http://dolgov.kz, https://dolgov.kz

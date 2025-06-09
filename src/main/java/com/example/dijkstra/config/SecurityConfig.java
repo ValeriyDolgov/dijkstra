@@ -42,7 +42,8 @@ public class SecurityConfig {
                                                                 "/public/css/**",
                                                                 "/user/assets/**",
                                                                 "/user/webjars/**",
-                                                                "/assets/**").permitAll().anyRequest().authenticated())
+                                                                "/assets/**",
+                                                                "/panel/**").permitAll().anyRequest().authenticated())
             .formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login-error").defaultSuccessUrl("/", true).permitAll())
             .rememberMe(conf -> conf.tokenValiditySeconds(5 * 24 * 60 * 60).key("AbcdefghiJklmNoPqRstUvXyz"))
             .logout(conf -> conf.logoutUrl("/logout").logoutSuccessUrl("/").deleteCookies("JSESSIONID", "remember-me"));
