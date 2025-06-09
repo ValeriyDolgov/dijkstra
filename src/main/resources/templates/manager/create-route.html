@@ -217,7 +217,11 @@
         document.body.classList.add("blurred");
 
         try {
-            const response = await fetch(`http://localhost:8080/api/routes?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
+            const { protocol, hostname, port } = window.location;
+            const backendPort = "8080"; // Укажи порт своего бэкенда, если он отличается от текущего
+            const baseUrl = `${protocol}//${hostname}:${backendPort}`;
+
+            const response = await fetch(`${baseUrl}/api/routes?startLat=${startLat}&startLon=${startLon}&endLat=${endLat}&endLon=${endLon}`);
             const routeCoordinates = await response.json();
             if (routeLayer) map.removeLayer(routeLayer);
             routeLayer = L.polyline(routeCoordinates, { color: 'blue' }).addTo(map);
