@@ -10,4 +10,4 @@ RUN unlink /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Almaty /etc/localtim
 
 COPY src/main/resources src/main/resources
 
-ENTRYPOINT ["java", "-Xmx4g", "-Duser.timezone=Asia/Qyzylorda", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-Xmx5g", "-Duser.timezone=Asia/Qyzylorda", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app.jar"]
