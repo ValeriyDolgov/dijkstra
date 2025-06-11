@@ -1,7 +1,9 @@
 package com.example.dijkstra.service;
 
-import com.example.dijkstra.model.RoadConfig;
-import com.example.dijkstra.repository.RoadConfigRepository;
+import com.example.dijkstra.model.RoadSurfaceConfig;
+import com.example.dijkstra.model.RoadTypeConfig;
+import com.example.dijkstra.repository.RoadSurfaceConfigRepository;
+import com.example.dijkstra.repository.RoadTypeConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,32 +14,19 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class RoadConfigService {
-    private final RoadConfigRepository roadConfigRepository;
+    private final RoadSurfaceConfigRepository roadSurfaceConfigRepository;
+    private final RoadTypeConfigRepository roadTypeConfigRepository;
     private final GeoJsonGraphBuilder geoJsonGraphBuilder;
 
-    public List<RoadConfig> findAll() {
-        return roadConfigRepository.findAll();
-    }
-
-    public RoadConfig findById(Long id) {
-        return roadConfigRepository.findById(id).orElseThrow();
+    public RoadSurfaceConfig findById(Long id) {
+        return roadSurfaceConfigRepository.findById(id).orElseThrow();
     }
 
     @Transactional
-    public void updateRoadConfig(long id, String surface, String roadType, Integer lanes, Integer maxspeed) throws IOException {
+    public void updateRoadConfig(List<RoadTypeConfig> typeConfigs, List<RoadSurfaceConfig> surfaceConfigs) throws IOException {
         // Установка значений по умолчанию
-        int safeLanes = (lanes != null && lanes > 0) ? lanes : 1;
-        int safeMaxspeed = (maxspeed != null && maxspeed > 0) ? maxspeed : 50;
-
-        var config = roadConfigRepository.findById(id).orElseThrow();
-
-        double multiplier = calculateMultiplier(surface, roadType, safeLanes, safeMaxspeed);
-        config.setLanes(safeLanes);
-        config.setMaxspeed(safeMaxspeed);
-        config.setSurface(surface);
-        config.setMultiplier(multiplier);
-        config.setRoadType(roadType);
-        roadConfigRepository.save(config);
+        roadSurfaceConfigRepository.saveAll(surfaceConfigs);
+        roadTypeConfigRepository.saveAll(typeConfigs);
         geoJsonGraphBuilder.updateRoads();
     }
 

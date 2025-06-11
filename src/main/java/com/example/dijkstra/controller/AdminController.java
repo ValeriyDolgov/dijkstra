@@ -1,8 +1,10 @@
 package com.example.dijkstra.controller;
 
 import com.example.dijkstra.controller.request.CreateManagerRequest;
-import com.example.dijkstra.controller.request.UpdateRoadConfigRequest;
-import com.example.dijkstra.model.RoadConfig;
+import com.example.dijkstra.model.RoadSurfaceConfig;
+import com.example.dijkstra.model.RoadTypeConfig;
+import com.example.dijkstra.repository.RoadSurfaceConfigRepository;
+import com.example.dijkstra.repository.RoadTypeConfigRepository;
 import com.example.dijkstra.service.RoadConfigService;
 import com.example.dijkstra.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -21,6 +24,8 @@ public class AdminController {
 
     private final UserService userService;
     private final RoadConfigService roadConfigService;
+    private final RoadTypeConfigRepository roadTypeConfigRepository;
+    private final RoadSurfaceConfigRepository roadSurfaceConfigRepository;
 
     @GetMapping
     public String mainPage() {
@@ -47,31 +52,48 @@ public class AdminController {
 
     @GetMapping("/road-config/all")
     public String showAllRoadConfigs(Model model) {
-        model.addAttribute("roadConfigs", roadConfigService.findAll());
+        var form =  new RoadConfigForm();
+        form.setSurfaceConfigs(roadSurfaceConfigRepository.findAll());
+        form.setTypeConfigs(roadTypeConfigRepository.findAll());
+        model.addAttribute("configs", form);
         return "admin/all-road-configs";
     }
 
-    @GetMapping("/road-config/{id}")
-    public String showAllRoadConfigs(@PathVariable Long id, Model model) {
-        var config = roadConfigService.findById(id);
-        model.addAttribute("config", config);
-        return "admin/config";
-    }
-
-    @GetMapping("/road-config/{id}/update")
-    public String updateRoadConfig(@PathVariable Long id, Model model) {
-        var config = roadConfigService.findById(id);
-        model.addAttribute("config", config);
+    @GetMapping("/road-config/update")
+    public String updateRoadConfig(Model model) {
+        var form =  new RoadConfigForm();
+        form.setSurfaceConfigs(roadSurfaceConfigRepository.findAll());
+        form.setTypeConfigs(roadTypeConfigRepository.findAll());
+        model.addAttribute("configs", form);
         return "admin/update-config";
     }
 
-    @PostMapping("/road-config/{id}/update")
-    public String updateRoadConfig(@PathVariable Long id, @ModelAttribute RoadConfig request) throws IOException {
-        roadConfigService.updateRoadConfig(request.getId(),
-                                           request.getSurface(),
-                                           request.getRoadType(),
-                                           request.getLanes(),
-                                           request.getMaxspeed());
-        return "redirect:/admin/road-config/" + id;
+    @PostMapping("/road-config/update")
+    public String updateRoadConfig(@ModelAttribute RoadConfigForm roadConfigForm) throws IOException {
+        roadConfigService.updateRoadConfig(roadConfigForm.getTypeConfigs(), roadConfigForm.getSurfaceConfigs());
+        return "redirect:/admin/road-config/all";
     }
+
+    public class RoadConfigForm {
+        private List<RoadSurfaceConfig> surfaceConfigs;
+        private List<RoadTypeConfig> typeConfigs;
+
+        // Обязательно геттеры и сеттеры
+        public List<RoadSurfaceConfig> getSurfaceConfigs() {
+            return surfaceConfigs;
+        }
+
+        public void setSurfaceConfigs(List<RoadSurfaceConfig> surfaceConfigs) {
+            this.surfaceConfigs = surfaceConfigs;
+        }
+
+        public List<RoadTypeConfig> getTypeConfigs() {
+            return typeConfigs;
+        }
+
+        public void setTypeConfigs(List<RoadTypeConfig> typeConfigs) {
+            this.typeConfigs = typeConfigs;
+        }
+    }
+
 }

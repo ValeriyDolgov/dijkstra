@@ -1,7 +1,9 @@
 package com.example.dijkstra.service;
 
-import com.example.dijkstra.model.RoadConfig;
-import com.example.dijkstra.repository.RoadConfigRepository;
+import com.example.dijkstra.model.RoadSurfaceConfig;
+import com.example.dijkstra.model.RoadTypeConfig;
+import com.example.dijkstra.repository.RoadSurfaceConfigRepository;
+import com.example.dijkstra.repository.RoadTypeConfigRepository;
 import com.example.dijkstra.service.record.RoadRuleConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,10 +22,11 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class GeoJsonGraphBuilder {
-    private final Map<String, RoadRuleConfig> roadConfigCache = new HashMap<>();
+    private final Map<String, Double> roadConfigCache = new HashMap<>();
     private final Graph<String, DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
     private final Map<String, double[]> coordinatesMap = new HashMap<>();
-    private final RoadConfigRepository roadConfigRepository;
+    private final RoadSurfaceConfigRepository roadSurfaceConfigRepository;
+    private final RoadTypeConfigRepository roadTypeConfigRepository;
 
     @PostConstruct
     public void init() throws IOException {
@@ -32,18 +35,15 @@ public class GeoJsonGraphBuilder {
     }
 
     public void preloadRoadConfigs() {
-        List<RoadConfig> configs = roadConfigRepository.findAll();
+        List<RoadSurfaceConfig> surfaceConfigs = roadSurfaceConfigRepository.findAll();
+        List<RoadTypeConfig> typeConfigs = roadTypeConfigRepository.findAll();
 
-        for (RoadConfig config : configs) {
-            String key = (config.getSurface() + "|" + config.getRoadType() + "|" + config.getLanes() + "|" + config.getMaxspeed()).toLowerCase();
+        for (var surfaceConfig : surfaceConfigs) {
+            roadConfigCache.put(surfaceConfig.getSurface(), surfaceConfig.getMultiplier());
+        }
 
-            roadConfigCache.put(key, new RoadRuleConfig(
-                    config.getSurface(),
-                    config.getRoadType(),
-                    config.getLanes(),
-                    config.getMaxspeed(),
-                    config.getMultiplier()
-            ));
+        for (var typeConfig : typeConfigs) {
+            roadConfigCache.put(typeConfig.getType(), typeConfig.getMultiplier());
         }
     }
 
@@ -87,40 +87,18 @@ public class GeoJsonGraphBuilder {
 
     private double getRoadMultiplier(JsonNode properties) {
         if (properties == null) return 1.0;
+        double multiplier = 1.0;
+        String surface = properties.has("surface") ? properties.get("surface").asText() : "";
+        int lanes = properties.has("lanes") ? properties.get("lanes").asInt(1) : 1;
+        int maxspeed = properties.has("maxspeed") ? properties.get("maxspeed").asInt(50) : 50;
+        String roadType = properties.has("highway") ? properties.get("highway").asText() : "unknown";
 
-        String surface = properties.has("surface") ? properties.get("surface").asText().toLowerCase() : "unknown";
-        String roadType = properties.has("highway") ? properties.get("highway").asText().toLowerCase() : "unknown";
-        Integer lanes = properties.has("lanes") && properties.get("lanes").canConvertToInt() ? properties.get("lanes").asInt() : null;
-        Integer maxspeed = properties.has("maxspeed") && properties.get("maxspeed").canConvertToInt() ? properties.get("maxspeed").asInt() : null;
+        multiplier *= roadConfigCache.getOrDefault(surface, 1.3);
+        multiplier *= Math.max(1.0, 2.0 / lanes);
+        multiplier *= 50.0 / maxspeed;
+        multiplier *= roadConfigCache.getOrDefault(roadType, 1.4);
 
-        RoadRuleConfig config = getRoadRuleConfig(surface, roadType, lanes, maxspeed);
-        return config.multiplier();
-    }
-
-    private RoadRuleConfig getRoadRuleConfig(String surface, String roadType, Integer lanes, Integer maxspeed) {
-        List<String> fallbackKeys = List.of(
-                buildKey(surface, roadType, lanes, maxspeed),
-                buildKey(surface, roadType, lanes, null),
-                buildKey(surface, roadType, null, null)
-        );
-
-        for (String key : fallbackKeys) {
-            if (roadConfigCache.containsKey(key)) {
-                return roadConfigCache.get(key);
-            }
-        }
-
-        // Возврат дефолтного значения
-        return new RoadRuleConfig(surface, roadType, lanes != null ? lanes : 1, maxspeed != null ? maxspeed : 50, 1.3);
-    }
-
-    private String buildKey(String surface, String roadType, Integer lanes, Integer maxspeed) {
-        return String.format("%s|%s|%s|%s",
-                             surface != null ? surface : "unknown",
-                             roadType != null ? roadType : "unknown",
-                             lanes != null ? lanes : "null",
-                             maxspeed != null ? maxspeed : "null"
-        ).toLowerCase();
+        return multiplier;
     }
 
     public List<double[]> findShortestPath(double[] start, double[] end) {

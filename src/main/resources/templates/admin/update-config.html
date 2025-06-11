@@ -1,94 +1,49 @@
 <!DOCTYPE html>
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{_fragments.html :: head ('Настройка')}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <style>
-        #map {
-            height: 500px;
-            margin-bottom: 20px;
-        }
-
-        body.blurred {
-            filter: blur(2px);
-        }
-
-        #loader {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            position: fixed;
-            z-index: 9999;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-    </style>
+<head th:replace="_fragments.html :: head ('Редактировать настройки')">
 </head>
 <body>
 <div th:insert="~{manager/navbar-manager}"></div>
 
-<div class="container" th:if="${config != null}">
-    <form action="#"
-          th:action="@{/admin/road-config/{id}/update(id=${config.id})}"
-          th:object="${config}"
-          method="post">
-        <h2 class="form-signin-heading">Обновить настройку</h2>
+<div class="container">
+    <h1>Редактировать настройки дорог</h1>
+    <br/>
 
-        <!-- Скрытое поле ID -->
-        <input type="hidden" th:field="*{id}"/>
+    <form th:action="@{/admin/road-config/update}" th:object="${configs}" method="post">
+        <h3>Настройки по типу покрытия (Surface)</h3>
+        <div th:each="surface, iterStat : *{surfaceConfigs}" class="card mb-3 p-3 border">
+            <input type="hidden" th:name="surfaceConfigs[__${iterStat.index}__].id" th:value="${surface.id}" />
+            <div class="form-group">
+                <label>Тип покрытия:</label>
+                <input type="text" class="form-control" th:name="surfaceConfigs[__${iterStat.index}__].surface"
+                       th:value="${surface.surface}" />
+            </div>
+            <div class="form-group">
+                <label>Модификатор:</label>
+                <input type="number" step="0.01" class="form-control"
+                       th:name="surfaceConfigs[__${iterStat.index}__].multiplier"
+                       th:value="${surface.multiplier}" />
+            </div>
+        </div>
 
-        <!-- surface (readonly) -->
-        <p>
-            <label for="surface" class="sr-only">Тип покрытия</label>
-            <input class="form-control mb-4 col-10" type="text" th:field="*{surface}" id="surface"
-                   placeholder="Покрытие" readonly/>
-        </p>
+        <h3>Настройки по типу дороги (Road Type)</h3>
+        <div th:each="type, iterStat : *{typeConfigs}" class="card mb-3 p-3 border">
+            <input type="hidden" th:name="typeConfigs[__${iterStat.index}__].id" th:value="${type.id}" />
+            <div class="form-group">
+                <label>Тип дороги:</label>
+                <input type="text" class="form-control" th:name="typeConfigs[__${iterStat.index}__].type"
+                       th:value="${type.type}" />
+            </div>
+            <div class="form-group">
+                <label>Модификатор:</label>
+                <input type="number" step="0.01" class="form-control"
+                       th:name="typeConfigs[__${iterStat.index}__].multiplier"
+                       th:value="${type.multiplier}" />
+            </div>
+        </div>
 
-        <!-- roadType (readonly) -->
-        <p>
-            <label for="roadType" class="sr-only">Тип дороги</label>
-            <input class="form-control mb-4 col-10" type="text" th:field="*{roadType}" id="roadType"
-                   placeholder="Тип дороги" readonly/>
-        </p>
-
-        <!-- lanes (editable) -->
-        <p>
-            <label for="lanes" class="sr-only">Кол-во линий</label>
-            <input class="form-control mb-4 col-10" type="number" th:field="*{lanes}" id="lanes"
-                   placeholder="Количество линий" min="1"/>
-        </p>
-
-        <!-- maxspeed (editable) -->
-        <p>
-            <label for="maxspeed" class="sr-only">Максимальная скорость</label>
-            <input class="form-control mb-4 col-10" type="number" th:field="*{maxspeed}" id="maxspeed"
-                   placeholder="Макс. скорость" min="1"/>
-        </p>
-
-        <input class="btn-success btn-lg btn-primary btn-block mb-4 col-3" type="submit" value="Обновить"/>
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
     </form>
 </div>
-
 </body>
 </html>

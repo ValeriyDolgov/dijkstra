@@ -1,22 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="_fragments.html :: head ('Настройки')">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="_fragments.html :: head ('Список настроек')">
 </head>
 <body>
 <div th:insert="~{manager/navbar-manager}"></div>
-<div class="container">
-    <h1> Список всех настроек </h1>
-    <br/>
 
-    <div th:each="config : ${roadConfigs}" class="card mb-3 p-3 border">
-        <h5>
-            <a th:href="@{/admin/road-config/{configId}(configId=${config.id})}" th:text="${config.surface}">Тип покрытия</a>
-        </h5>
-        <p><strong>Тип дороги:</strong> <span th:text="${config.roadType}">Адрес отправления</span></p>
-        <p><strong>Кол-во линий:</strong> <span th:text="${config.lanes}">0</span></p>
-        <p><strong>Максимальная скорость:</strong> <span th:text="${config.maxspeed}">0</span></p>
-        <p><strong>Общий модификатор дороги:</strong> <span th:text="${config.multiplier}">0.0</span></p>
+<div class="container">
+    <h1 class="mt-4">Список всех настроек</h1>
+    <hr/>
+
+    <h3 class="mt-4">Настройки по типу покрытия (Surface)</h3>
+    <div th:each="surface : ${configs.surfaceConfigs}" class="card mb-3 p-3 border">
+        <p><strong>Тип покрытия:</strong> <span th:text="${surface.surface}">Асфальт</span></p>
+        <p><strong>Модификатор покрытия:</strong> <span th:text="${surface.multiplier}">1.0</span></p>
+    </div>
+
+    <h3 class="mt-4">Настройки по типу дороги (Road Type)</h3>
+    <div th:each="type : ${configs.typeConfigs}" class="card mb-3 p-3 border">
+        <p><strong>Тип дороги:</strong> <span th:text="${type.type}">Магистраль</span></p>
+        <p><strong>Модификатор дороги:</strong> <span th:text="${type.multiplier}">1.0</span></p>
+    </div>
+
+    <div class="text-end mt-4">
+        <a th:href="@{/admin/road-config/update}" class="btn btn-primary">Редактировать</a>
     </div>
 </div>
 </body>
