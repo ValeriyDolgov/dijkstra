@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="_fragments.html :: head ('Настройки')">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div th:insert="~{manager/navbar-manager}"></div>
+<div class="container">
+    <h1> Список всех настроек </h1>
+    <br/>
+
+    <div th:each="config : ${roadConfigs}" class="card mb-3 p-3 border">
+        <h5>
+            <a th:href="@{/admin/road-config/{configId}(configId=${config.id})}" th:text="${config.surface}">Тип покрытия</a>
+        </h5>
+        <p><strong>Тип дороги:</strong> <span th:text="${config.roadType}">Адрес отправления</span></p>
+        <p><strong>Кол-во линий:</strong> <span th:text="${config.lanes}">0</span></p>
+        <p><strong>Максимальная скорость:</strong> <span th:text="${config.maxspeed}">0</span></p>
+        <p><strong>Общий модификатор дороги:</strong> <span th:text="${config.multiplier}">0.0</span></p>
+    </div>
+</div>
+</body>
+</html>

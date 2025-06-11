@@ -1,7 +1,12 @@
 package com.example.dijkstra.service;
 
+import com.example.dijkstra.model.RoadConfig;
+import com.example.dijkstra.repository.RoadConfigRepository;
+import com.example.dijkstra.service.record.RoadRuleConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
@@ -13,9 +18,34 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class GeoJsonGraphBuilder {
+    private final Map<String, RoadRuleConfig> roadConfigCache = new HashMap<>();
     private final Graph<String, DefaultWeightedEdge> graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
     private final Map<String, double[]> coordinatesMap = new HashMap<>();
+    private final RoadConfigRepository roadConfigRepository;
+
+    @PostConstruct
+    public void init() throws IOException {
+        preloadRoadConfigs();
+        loadGeoJson("src/main/resources/roads.geojson");
+    }
+
+    public void preloadRoadConfigs() {
+        List<RoadConfig> configs = roadConfigRepository.findAll();
+
+        for (RoadConfig config : configs) {
+            String key = (config.getSurface() + "|" + config.getRoadType() + "|" + config.getLanes() + "|" + config.getMaxspeed()).toLowerCase();
+
+            roadConfigCache.put(key, new RoadRuleConfig(
+                    config.getSurface(),
+                    config.getRoadType(),
+                    config.getLanes(),
+                    config.getMaxspeed(),
+                    config.getMultiplier()
+            ));
+        }
+    }
 
     public void loadGeoJson(String filePath) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -56,55 +86,41 @@ public class GeoJsonGraphBuilder {
     }
 
     private double getRoadMultiplier(JsonNode properties) {
-        double multiplier = 1.0;
+        if (properties == null) return 1.0;
 
-        if (properties != null) {
-            String surface = properties.has("surface") ? properties.get("surface").asText() : "";
-            int lanes = properties.has("lanes") ? properties.get("lanes").asInt(1) : 1;
-            int maxspeed = properties.has("maxspeed") ? properties.get("maxspeed").asInt(50) : 50;
-            String roadType = properties.has("highway") ? properties.get("highway").asText() : "unknown";
+        String surface = properties.has("surface") ? properties.get("surface").asText().toLowerCase() : "unknown";
+        String roadType = properties.has("highway") ? properties.get("highway").asText().toLowerCase() : "unknown";
+        Integer lanes = properties.has("lanes") && properties.get("lanes").canConvertToInt() ? properties.get("lanes").asInt() : null;
+        Integer maxspeed = properties.has("maxspeed") && properties.get("maxspeed").canConvertToInt() ? properties.get("maxspeed").asInt() : null;
 
-            switch (surface) {
-                case "asphalt", "paved":
-                    multiplier *= 1.0;
-                    break;
-                case "gravel":
-                    multiplier *= 1.2;
-                    break;
-                case "dirt":
-                    multiplier *= 1.5;
-                    break;
-                default:
-                    multiplier *= 1.3;
-                    break;
-            }
+        RoadRuleConfig config = getRoadRuleConfig(surface, roadType, lanes, maxspeed);
+        return config.multiplier();
+    }
 
-            multiplier *= Math.max(1.0, 2.0 / lanes);
-            multiplier *= 50.0 / maxspeed;
+    private RoadRuleConfig getRoadRuleConfig(String surface, String roadType, Integer lanes, Integer maxspeed) {
+        List<String> fallbackKeys = List.of(
+                buildKey(surface, roadType, lanes, maxspeed),
+                buildKey(surface, roadType, lanes, null),
+                buildKey(surface, roadType, null, null)
+        );
 
-            switch (roadType) {
-                case "motorway":
-                    multiplier *= 0.9;
-                    break;
-                case "primary":
-                    multiplier *= 1.0;
-                    break;
-                case "secondary":
-                    multiplier *= 1.1;
-                    break;
-                case "tertiary":
-                    multiplier *= 1.2;
-                    break;
-                case "residential":
-                    multiplier *= 1.3;
-                    break;
-                default:
-                    multiplier *= 1.4;
-                    break;
+        for (String key : fallbackKeys) {
+            if (roadConfigCache.containsKey(key)) {
+                return roadConfigCache.get(key);
             }
         }
 
-        return multiplier;
+        // Возврат дефолтного значения
+        return new RoadRuleConfig(surface, roadType, lanes != null ? lanes : 1, maxspeed != null ? maxspeed : 50, 1.3);
+    }
+
+    private String buildKey(String surface, String roadType, Integer lanes, Integer maxspeed) {
+        return String.format("%s|%s|%s|%s",
+                             surface != null ? surface : "unknown",
+                             roadType != null ? roadType : "unknown",
+                             lanes != null ? lanes : "null",
+                             maxspeed != null ? maxspeed : "null"
+        ).toLowerCase();
     }
 
     public List<double[]> findShortestPath(double[] start, double[] end) {
@@ -120,6 +136,17 @@ public class GeoJsonGraphBuilder {
             correctedPath.add(new double[]{coords[0], coords[1]}); // Меняем lat и lon местами
         }
         return correctedPath;
+    }
+
+    public void updateRoads() throws IOException {
+        clearGraph();
+        preloadRoadConfigs();
+        loadGeoJson("src/main/resources/roads.geojson");
+    }
+
+    public void clearGraph() {
+        graph.removeAllVertices(new HashSet<>(graph.vertexSet()));
+        coordinatesMap.clear();
     }
 
     private String findNearestNode(double[] point) {
